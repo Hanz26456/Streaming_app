@@ -1,0 +1,89 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id           Int            @id @default(autoincrement())
+  name         String
+  email        String        @unique 
+  avatarUrl    String?       
+  password     String
+  createdAt    DateTime       @default(now())
+  watchHistory WatchHistory[]
+  watchlist    Watchlist[]
+}
+
+model Movie {
+  id           Int            @id @default(autoincrement())
+  tmdbId       Int?
+  title        String
+  description  String         @db.Text
+  genre        String
+  releaseYear  Int
+  duration     Int
+  videoUrl     String
+  posterUrl    String
+  backdropUrl  String?
+  createdAt    DateTime       @default(now())
+  watchHistory WatchHistory[]
+  watchlist    Watchlist[]
+}
+model WatchHistory {
+  id        Int      @id @default(autoincrement())
+  userId    Int
+  movieId   Int
+  progress  Int      @default(0)
+  watchedAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id])
+  movie     Movie    @relation(fields: [movieId], references: [id])
+}
+
+model Series {
+  id           Int         @id @default(autoincrement())
+  tmdbId       Int?
+  title        String
+  description  String?     @db.Text
+  genre        String?
+  releaseYear  Int?
+  posterUrl    String?
+  backdropUrl  String?
+  totalSeasons Int?        @default(1)
+  episodes     Episode[]
+  createdAt    DateTime    @default(now())
+  watchlist    Watchlist[]
+}
+
+model Episode {
+  id            Int      @id @default(autoincrement())
+  seriesId      Int
+  series        Series   @relation(fields: [seriesId], references: [id], onDelete: Cascade)
+  title         String
+  description   String?  @db.Text
+  season        Int      @default(1)
+  episodeNumber Int
+  duration      Int?
+  videoUrl      String?
+  thumbnailUrl  String?
+  createdAt     DateTime @default(now())
+
+  @@unique([seriesId, season, episodeNumber])
+}
+
+model Watchlist {
+  id        Int      @id @default(autoincrement())
+  userId    Int
+  movieId   Int?
+  seriesId  Int?
+  addedAt   DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id])
+  movie     Movie?   @relation(fields: [movieId], references: [id])
+  series    Series?  @relation(fields: [seriesId], references: [id])
+
+  @@unique([userId, movieId])
+  @@unique([userId, seriesId])
+}
