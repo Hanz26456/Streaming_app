@@ -10,6 +10,7 @@ export default function SeriesDetailPage() {
   const [series, setSeries] = useState(null)
   const [loading, setLoading] = useState(true)
   const [activeSeason, setActiveSeason] = useState(1)
+  const [showTrailer, setShowTrailer] = useState(false)  // ✅ tambah
 
   useEffect(() => {
     const token = Cookies.get('token')
@@ -65,11 +66,6 @@ export default function SeriesDetailPage() {
         )}
         <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to right, rgba(10,10,15,0.98) 35%, rgba(10,10,15,0.4) 70%, transparent), linear-gradient(to top, rgba(10,10,15,1) 0%, transparent 40%)' }} />
         <div style={{ position: 'absolute', bottom: 44, left: 32, maxWidth: 520, display: 'flex', gap: 24, alignItems: 'flex-end' }}>
-          {series.posterUrl && (
-            <img src={series.posterUrl} alt={series.title}
-              style={{ width: 120, borderRadius: 8, flexShrink: 0, border: '0.5px solid #333', display: 'none' }}
-              onLoad={e => e.target.style.display = 'block'} />
-          )}
           <div>
             <div style={{ fontSize: 11, color: '#e50914', fontWeight: 700, letterSpacing: 2, marginBottom: 8 }}>★ SERIES</div>
             <h1 style={{ fontSize: 42, fontWeight: 900, marginBottom: 10, lineHeight: 1.05 }}>{series.title}</h1>
@@ -84,18 +80,40 @@ export default function SeriesDetailPage() {
             <p style={{ color: '#bbb', fontSize: 14, lineHeight: 1.65, marginBottom: 20, maxWidth: 460 }}>
               {series.description?.length > 200 ? series.description.slice(0, 200) + '...' : series.description}
             </p>
-            {series.episodes.length > 0 && (
-              <div style={{ display: 'flex', gap: 10 }}>
+            <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
+              {series.episodes.length > 0 && (
                 <button onClick={() => router.push(`/series/${id}/episode/${series.episodes[0].id}`)}
                   style={{ background: '#fff', color: '#000', border: 'none', padding: '11px 28px', borderRadius: 6, fontSize: 14, fontWeight: 700, cursor: 'pointer' }}>
                   ▶ Putar Episode 1
                 </button>
-                <WatchlistButton seriesId={series.id} tmdbSeriesId={series.tmdbId} />
-              </div>
-            )}
+              )}
+              {/* ✅ Tombol Trailer */}
+              {series.trailerKey && (
+                <button onClick={() => setShowTrailer(!showTrailer)}
+                  style={{ background: 'transparent', border: '1px solid #fff', color: '#fff', padding: '11px 20px', borderRadius: 6, fontSize: 14, cursor: 'pointer', fontWeight: 600 }}>
+                  🎬 {showTrailer ? 'Tutup Trailer' : 'Tonton Trailer'}
+                </button>
+              )}
+              <WatchlistButton seriesId={series.id} tmdbSeriesId={series.tmdbId} />
+            </div>
           </div>
         </div>
       </div>
+
+      {/* ✅ Section Trailer */}
+      {series.trailerKey && showTrailer && (
+        <div style={{ maxWidth: 900, margin: '0 auto', padding: '28px 32px 0' }}>
+          <h3 style={{ fontSize: 16, fontWeight: 700, marginBottom: 12, color: '#e0e0e0' }}>🎬 Trailer Resmi</h3>
+          <div style={{ position: 'relative', paddingTop: '56.25%', borderRadius: 8, overflow: 'hidden' }}>
+            <iframe
+              src={`https://www.youtube.com/embed/${series.trailerKey}?autoplay=1`}
+              style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', border: 'none' }}
+              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+              allowFullScreen
+            />
+          </div>
+        </div>
+      )}
 
       {/* Episode List */}
       <div style={{ padding: '32px 32px', maxWidth: 1000 }}>

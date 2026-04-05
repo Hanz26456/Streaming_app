@@ -15,6 +15,7 @@ export default function MoviePage() {
   const [muted, setMuted] = useState(false)
   const videoRef = useRef(null)
   const playerRef = useRef(null)
+  const [showTrailer, setShowTrailer] = useState(false)
 
   useEffect(() => {
     const token = Cookies.get('token')
@@ -102,6 +103,12 @@ export default function MoviePage() {
                   Video belum tersedia
                 </div>
               )}
+              {movie.trailerKey && (
+              <button onClick={() => setShowTrailer(!showTrailer)}
+                style={{ background: 'transparent', border: '1px solid #fff', color: '#fff', padding: '11px 20px', borderRadius: 6, fontSize: 14, cursor: 'pointer', fontWeight: 600 }}>
+                🎬 {showTrailer ? 'Tutup Trailer' : 'Tonton Trailer'}
+              </button>
+            )}
              <WatchlistButton movieId={movie.id} tmdbMovieId={movie.tmdbId} />
             </div>
           </div>
@@ -143,6 +150,20 @@ export default function MoviePage() {
           </div>
         </div>
       )}
+
+      {movie.trailerKey && showTrailer && (
+      <div style={{ maxWidth: 900, margin: '0 auto', padding: '0 32px 28px' }}>
+        <h3 style={{ fontSize: 16, fontWeight: 700, marginBottom: 12, color: '#e0e0e0' }}>🎬 Trailer Resmi</h3>
+        <div style={{ position: 'relative', paddingTop: '56.25%', borderRadius: 8, overflow: 'hidden' }}>
+          <iframe
+            src={`https://www.youtube.com/embed/${movie.trailerKey}?autoplay=1`}
+            style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', border: 'none' }}
+            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+            allowFullScreen
+          />
+        </div>
+      </div>
+)}
 
       {/* Info lengkap */}
       <div style={{ padding: '28px 32px', maxWidth: 900 }}>

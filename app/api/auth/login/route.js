@@ -17,8 +17,25 @@ export async function POST(req) {
       return NextResponse.json({ error: 'Password salah' }, { status: 401 })
     }
 
-    const token = signToken({ id: user.id, name: user.name, email: user.email, avatarUrl: user.avatarUrl })
-    return NextResponse.json({ token, user: { id: user.id, name: user.name, email: user.email, avatarUrl: user.avatarUrl } })
+    // ✅ tambah role ke token
+    const token = signToken({ 
+      id: user.id, 
+      name: user.name, 
+      email: user.email, 
+      avatarUrl: user.avatarUrl,
+      role: user.role  // ← tambah ini
+    })
+
+    return NextResponse.json({ 
+      token, 
+      user: { 
+        id: user.id, 
+        name: user.name, 
+        email: user.email, 
+        avatarUrl: user.avatarUrl,
+        role: user.role  // ← tambah ini
+      } 
+    })
 
   } catch (error) {
     console.error('LOGIN ERROR:', error.message)

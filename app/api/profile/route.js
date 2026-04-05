@@ -13,7 +13,6 @@ function getUserId(request) {
   } catch { return null }
 }
 
-// GET — ambil data profil + statistik
 export async function GET(request) {
   const userId = getUserId(request)
   if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
@@ -26,6 +25,7 @@ export async function GET(request) {
         name: true,
         email: true,
         avatarUrl: true,
+        role: true,
         createdAt: true,
         _count: {
           select: {
@@ -37,7 +37,8 @@ export async function GET(request) {
     })
     return NextResponse.json(user)
   } catch (error) {
-    return NextResponse.json({ error: 'Gagal mengambil profil' }, { status: 500 })
+    console.error('PROFILE ERROR:', error.message) // ← tambah ini
+    return NextResponse.json({ error: error.message }, { status: 500 })
   }
 }
 
@@ -69,7 +70,7 @@ export async function PATCH(request) {
     const updated = await prisma.user.update({
       where: { id: userId },
       data: updateData,
-      select: { id: true, name: true, email: true, avatarUrl: true }
+      select: { id: true, name: true, email: true, avatarUrl: true,role: true}
     })
 
     return NextResponse.json(updated)
