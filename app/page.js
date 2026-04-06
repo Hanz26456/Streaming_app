@@ -74,7 +74,7 @@ export default function HomePage() {
           <div style={{ display: 'flex', gap: 20 }}>
             <span style={{ fontSize: 14, color: '#fff', fontWeight: 600, cursor: 'pointer' }}>Beranda</span>
             <span onClick={() => router.push('/series')} style={{ fontSize: 14, color: '#ccc', cursor: 'pointer' }}>Series</span>
-            <span onClick={() => router.push('/movies')} style={{ fontSize: 14, color: '#ccc', cursor: 'pointer' }}>Film</span>
+            <span onClick={() => router.push('/movie')} style={{ fontSize: 14, color: '#ccc', cursor: 'pointer' }}>Film</span>
             <span onClick={() => router.push('/watchlist')} style={{ fontSize: 14, color: '#ccc', cursor: 'pointer' }}>❤️ Watchlist</span>
             {user?.role === 'ADMIN' && (
               <span onClick={() => router.push('/admin')} style={{ fontSize: 14, color: '#e50914', cursor: 'pointer', fontWeight: 700 }}>⚙️ Admin</span>
