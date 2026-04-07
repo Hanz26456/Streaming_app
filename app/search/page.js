@@ -2,8 +2,11 @@
 import { useEffect, useState, useCallback, Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import Cookies from 'js-cookie'
+import { useApp } from '@/context/AppContext'
+import ThemeLangToggle from '@/components/ThemeLangToggle'
 
 function SearchContent() {
+  const { colors, lang } = useApp()
   const router = useRouter()
   const searchParams = useSearchParams()
   const [query, setQuery] = useState(searchParams.get('q') || '')
@@ -64,17 +67,20 @@ function SearchContent() {
   ])]
 
   return (
-    <div style={{ background: '#0a0a0f', minHeight: '100vh', color: '#fff', fontFamily: 'sans-serif' }}>
+    <div style={{ background: colors.bg, minHeight: '100vh', color: colors.text, fontFamily: 'sans-serif' }}>
 
       {/* Navbar */}
-      <nav style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '14px 32px', background: 'rgba(0,0,0,0.95)', position: 'sticky', top: 0, zIndex: 10, borderBottom: '0.5px solid #1a1a1a' }}>
+      <nav style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '14px 32px', background: colors.bgNav, position: 'sticky', top: 0, zIndex: 10, borderBottom: `0.5px solid ${colors.border}` }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 32 }}>
           <div onClick={() => router.push('/')} style={{ fontSize: 22, fontWeight: 700, color: '#e50914', letterSpacing: 3, cursor: 'pointer' }}>NUSAFLIX</div>
           <div style={{ display: 'flex', gap: 20 }}>
-            <span onClick={() => router.push('/')} style={{ fontSize: 14, color: '#ccc', cursor: 'pointer' }}>Beranda</span>
-            <span onClick={() => router.push('/series')} style={{ fontSize: 14, color: '#ccc', cursor: 'pointer' }}>Series</span>
-            <span onClick={() => router.push('/movies')} style={{ fontSize: 14, color: '#ccc', cursor: 'pointer' }}>Film</span>
+            <span onClick={() => router.push('/')} style={{ fontSize: 14, color: colors.textMuted, cursor: 'pointer' }}>{lang === 'id' ? 'Beranda' : 'Home'}</span>
+            <span onClick={() => router.push('/series')} style={{ fontSize: 14, color: colors.textMuted, cursor: 'pointer' }}>Series</span>
+            <span onClick={() => router.push('/movies')} style={{ fontSize: 14, color: colors.textMuted, cursor: 'pointer' }}>{lang === 'id' ? 'Film' : 'Movies'}</span>
           </div>
+        </div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
+          <ThemeLangToggle />
         </div>
       </nav>
 
@@ -84,26 +90,26 @@ function SearchContent() {
         <form onSubmit={handleSearch} style={{ marginBottom: 28 }}>
           <div style={{ display: 'flex', gap: 10 }}>
             <div style={{ flex: 1, position: 'relative' }}>
-              <span style={{ position: 'absolute', left: 16, top: '50%', transform: 'translateY(-50%)', fontSize: 16, color: '#666' }}>🔍</span>
+              <span style={{ position: 'absolute', left: 16, top: '50%', transform: 'translateY(-50%)', fontSize: 16, color: colors.textMuted }}>🔍</span>
               <input type="text" value={query} onChange={e => setQuery(e.target.value)}
-                placeholder="Cari judul film atau series..."
-                style={{ width: '100%', padding: '13px 18px 13px 44px', borderRadius: 8, background: '#141414', border: '0.5px solid #2a2a2a', color: '#fff', fontSize: 15, outline: 'none', boxSizing: 'border-box', transition: 'border-color 0.2s' }}
+                placeholder={lang === 'id' ? "Cari judul film atau series..." : "Search movies or series..."}
+                style={{ width: '100%', padding: '13px 18px 13px 44px', borderRadius: 8, background: colors.bgInput, border: `0.5px solid ${colors.borderMuted}`, color: colors.text, fontSize: 15, outline: 'none', boxSizing: 'border-box', transition: 'border-color 0.2s' }}
                 onFocus={e => e.target.style.borderColor = '#e50914'}
-                onBlur={e => e.target.style.borderColor = '#2a2a2a'}
+                onBlur={e => e.target.style.borderColor = colors.borderMuted}
               />
             </div>
             <button type="submit"
               style={{ background: '#e50914', color: '#fff', border: 'none', padding: '13px 28px', borderRadius: 8, fontSize: 14, fontWeight: 700, cursor: 'pointer', whiteSpace: 'nowrap' }}>
-              Cari
+              {lang === 'id' ? 'Cari' : 'Search'}
             </button>
           </div>
         </form>
 
         {/* Filter Type */}
         <div style={{ display: 'flex', gap: 8, marginBottom: 14 }}>
-          {[{ label: 'Semua', value: 'all' }, { label: 'Film', value: 'movie' }, { label: 'Series', value: 'series' }].map(t => (
+          {[{ label: lang === 'id' ? 'Semua' : 'All', value: 'all' }, { label: lang === 'id' ? 'Film' : 'Movies', value: 'movie' }, { label: 'Series', value: 'series' }].map(t => (
             <button key={t.value} onClick={() => handleTypeChange(t.value)}
-              style={{ background: type === t.value ? '#e50914' : '#141414', color: '#fff', border: type === t.value ? 'none' : '0.5px solid #2a2a2a', padding: '7px 18px', borderRadius: 20, cursor: 'pointer', fontSize: 13, fontWeight: type === t.value ? 700 : 400 }}>
+              style={{ background: type === t.value ? '#e50914' : colors.bgInput, color: type === t.value ? '#fff' : colors.text, border: type === t.value ? 'none' : `0.5px solid ${colors.borderMuted}`, padding: '7px 18px', borderRadius: 20, cursor: 'pointer', fontSize: 13, fontWeight: type === t.value ? 700 : 400 }}>
               {t.label}
             </button>
           ))}
@@ -113,35 +119,35 @@ function SearchContent() {
         <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 32 }}>
           {allGenres.slice(0, 12).map(g => (
             <button key={g} onClick={() => handleGenreChange(g)}
-              style={{ background: genre === g ? '#fff' : 'transparent', color: genre === g ? '#000' : '#888', border: '0.5px solid', borderColor: genre === g ? '#fff' : '#333', padding: '5px 14px', borderRadius: 20, cursor: 'pointer', fontSize: 12, fontWeight: genre === g ? 600 : 400, transition: 'all 0.15s' }}>
-              {g}
+              style={{ background: genre === g ? colors.text : 'transparent', color: genre === g ? colors.bg : colors.textSub, border: '0.5px solid', borderColor: genre === g ? colors.text : colors.borderMuted, padding: '5px 14px', borderRadius: 20, cursor: 'pointer', fontSize: 12, fontWeight: genre === g ? 600 : 400, transition: 'all 0.15s' }}>
+              {g === 'Semua' ? (lang === 'id' ? 'Semua' : 'All') : g}
             </button>
           ))}
         </div>
 
         {/* Loading */}
         {loading && (
-          <div style={{ textAlign: 'center', color: '#555', padding: '60px 0' }}>
-            <div style={{ fontSize: 14 }}>Mencari...</div>
+          <div style={{ textAlign: 'center', color: colors.textSub, padding: '60px 0' }}>
+            <div style={{ fontSize: 14 }}>{lang === 'id' ? 'Mencari...' : 'Searching...'}</div>
           </div>
         )}
 
         {/* Hasil pencarian */}
         {!loading && searched && (
           <>
-            <div style={{ fontSize: 14, color: '#666', marginBottom: 24 }}>
-              {results.total} hasil untuk
-              <span style={{ color: '#fff', fontWeight: 600 }}> "{query}"</span>
+            <div style={{ fontSize: 14, color: colors.textSub, marginBottom: 24 }}>
+              {results.total} {lang === 'id' ? 'hasil untuk' : 'results for'}
+              <span style={{ color: colors.text, fontWeight: 600 }}> "{query}"</span>
             </div>
 
             {results.movies?.length > 0 && (
               <div style={{ marginBottom: 40 }}>
-                <div style={{ fontSize: 16, fontWeight: 700, marginBottom: 16, color: '#e0e0e0' }}>
-                  Film <span style={{ color: '#555', fontWeight: 400, fontSize: 13 }}>— {results.movies.length} hasil</span>
+                <div style={{ fontSize: 16, fontWeight: 700, marginBottom: 16, color: colors.text }}>
+                  {lang === 'id' ? 'Film' : 'Movies'}  <span style={{ color: colors.textSub, fontWeight: 400, fontSize: 13 }}>— {results.movies.length} {lang === 'id' ? 'hasil' : 'results'}</span>
                 </div>
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(150px, 1fr))', gap: 16 }}>
                   {results.movies.map(movie => (
-                    <ContentCard key={movie.id} item={movie} type="movie" onClick={() => router.push(`/movie/${movie.id}`)} />
+                     <ContentCard key={movie.id} item={movie} type="movie" onClick={() => router.push(`/movie/${movie.id}`)} colors={colors} />
                   ))}
                 </div>
               </div>
@@ -149,22 +155,22 @@ function SearchContent() {
 
             {results.series?.length > 0 && (
               <div style={{ marginBottom: 40 }}>
-                <div style={{ fontSize: 16, fontWeight: 700, marginBottom: 16, color: '#e0e0e0' }}>
-                  Series <span style={{ color: '#555', fontWeight: 400, fontSize: 13 }}>— {results.series.length} hasil</span>
+                <div style={{ fontSize: 16, fontWeight: 700, marginBottom: 16, color: colors.text }}>
+                  Series <span style={{ color: colors.textSub, fontWeight: 400, fontSize: 13 }}>— {results.series.length} {lang === 'id' ? 'hasil' : 'results'}</span>
                 </div>
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(150px, 1fr))', gap: 16 }}>
                   {results.series.map(s => (
-                    <ContentCard key={s.id} item={s} type="series" onClick={() => router.push(`/series/${s.id}`)} />
+                    <ContentCard key={s.id} item={s} type="series" onClick={() => router.push(`/series/${s.id}`)} colors={colors} />
                   ))}
                 </div>
               </div>
             )}
 
             {results.total === 0 && (
-              <div style={{ textAlign: 'center', padding: '80px 0', color: '#444' }}>
+              <div style={{ textAlign: 'center', padding: '80px 0', color: colors.textSub }}>
                 <div style={{ fontSize: 44, marginBottom: 16, opacity: 0.4 }}>🎬</div>
-                <div style={{ fontSize: 16, fontWeight: 600, marginBottom: 8, color: '#666' }}>Tidak ditemukan</div>
-                <div style={{ fontSize: 13, color: '#444' }}>Coba kata kunci atau filter lain</div>
+                <div style={{ fontSize: 16, fontWeight: 600, marginBottom: 8, color: colors.textMuted }}>{lang === 'id' ? 'Tidak ditemukan' : 'Not found'}</div>
+                <div style={{ fontSize: 13, color: colors.textSub }}>{lang === 'id' ? 'Coba kata kunci atau filter lain' : 'Try another keyword or filter'}</div>
               </div>
             )}
           </>
@@ -175,10 +181,10 @@ function SearchContent() {
           <>
             {allContent.movies.length > 0 && (
               <div style={{ marginBottom: 40 }}>
-                <div style={{ fontSize: 16, fontWeight: 700, marginBottom: 16, color: '#e0e0e0' }}>Film Tersedia</div>
+                <div style={{ fontSize: 16, fontWeight: 700, marginBottom: 16, color: colors.text }}>{lang === 'id' ? 'Film Tersedia' : 'Available Movies'}</div>
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(150px, 1fr))', gap: 16 }}>
                   {allContent.movies.map(movie => (
-                    <ContentCard key={movie.id} item={movie} type="movie" onClick={() => router.push(`/movie/${movie.id}`)} />
+                    <ContentCard key={movie.id} item={movie} type="movie" onClick={() => router.push(`/movie/${movie.id}`)} colors={colors} />
                   ))}
                 </div>
               </div>
@@ -186,19 +192,19 @@ function SearchContent() {
 
             {allContent.series.length > 0 && (
               <div style={{ marginBottom: 40 }}>
-                <div style={{ fontSize: 16, fontWeight: 700, marginBottom: 16, color: '#e0e0e0' }}>Series Tersedia</div>
+                <div style={{ fontSize: 16, fontWeight: 700, marginBottom: 16, color: colors.text }}>{lang === 'id' ? 'Series Tersedia' : 'Available Series'}</div>
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(150px, 1fr))', gap: 16 }}>
                   {allContent.series.map(s => (
-                    <ContentCard key={s.id} item={s} type="series" onClick={() => router.push(`/series/${s.id}`)} />
+                    <ContentCard key={s.id} item={s} type="series" onClick={() => router.push(`/series/${s.id}`)} colors={colors} />
                   ))}
                 </div>
               </div>
             )}
 
             {allContent.movies.length === 0 && allContent.series.length === 0 && (
-              <div style={{ textAlign: 'center', padding: '80px 0', color: '#444' }}>
+              <div style={{ textAlign: 'center', padding: '80px 0', color: colors.textSub }}>
                 <div style={{ fontSize: 44, marginBottom: 16, opacity: 0.4 }}>🔍</div>
-                <div style={{ fontSize: 14, color: '#555' }}>Ketik judul untuk mulai mencari</div>
+                <div style={{ fontSize: 14, color: colors.textSub }}>{lang === 'id' ? 'Ketik judul untuk mulai mencari' : 'Type a title to start searching'}</div>
               </div>
             )}
           </>
@@ -208,11 +214,11 @@ function SearchContent() {
   )
 }
 
-function ContentCard({ item, type, onClick }) {
+function ContentCard({ item, type, onClick, colors }) {
   const [hover, setHover] = useState(false)
   return (
     <div onClick={onClick} onMouseEnter={() => setHover(true)} onMouseLeave={() => setHover(false)}
-      style={{ cursor: 'pointer', borderRadius: 8, overflow: 'hidden', background: '#0f0f0f', border: '0.5px solid', borderColor: hover ? '#333' : '#1a1a1a', transform: hover ? 'scale(1.04)' : 'scale(1)', transition: 'all 0.2s' }}>
+      style={{ cursor: 'pointer', borderRadius: 8, overflow: 'hidden', background: colors.cardBg, border: '0.5px solid', borderColor: hover ? colors.borderMuted : colors.border, transform: hover ? 'scale(1.04)' : 'scale(1)', transition: 'all 0.2s' }}>
       <div style={{ position: 'relative' }}>
         <img src={item.posterUrl || `https://picsum.photos/seed/${item.id}x/300/450`} alt={item.title}
           style={{ width: '100%', height: 215, objectFit: 'cover', display: 'block' }} />
@@ -226,10 +232,10 @@ function ContentCard({ item, type, onClick }) {
         )}
       </div>
       <div style={{ padding: '10px 12px 12px' }}>
-        <div style={{ fontWeight: 600, fontSize: 13, color: '#e0e0e0', marginBottom: 4, lineHeight: 1.3 }}>
+        <div style={{ fontWeight: 600, fontSize: 13, color: colors.text, marginBottom: 4, lineHeight: 1.3 }}>
           {item.title?.length > 24 ? item.title.slice(0, 24) + '...' : item.title}
         </div>
-        <div style={{ fontSize: 11, color: '#666' }}>
+        <div style={{ fontSize: 11, color: colors.textSub }}>
           {item.releaseYear}
           {item._count?.episodes && <span> · {item._count.episodes} ep</span>}
           {item.duration && <span> · {item.duration} mnt</span>}

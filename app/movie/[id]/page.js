@@ -3,8 +3,16 @@ import { useEffect, useState, useRef } from 'react'
 import { useRouter, useParams } from 'next/navigation'
 import Cookies from 'js-cookie'
 import WatchlistButton from '@/components/WatchListButton'
+import { useApp } from '@/context/AppContext'
+import ReviewSection from '@/components/ReviewSection'
+import PremiumGate from '@/components/PremiumGate'
+import PaymentModal from '@/components/PaymentModal'
+import CastSection from '@/components/CastSection'
+import MovieCard from '@/components/MovieCard'
+import MovieSection from '@/components/MovieSection'
 
 export default function MoviePage() {
+  const { colors, lang } = useApp()
   const router = useRouter()
   const { id } = useParams()
   const [movie, setMovie] = useState(null)
@@ -16,14 +24,74 @@ export default function MoviePage() {
   const videoRef = useRef(null)
   const playerRef = useRef(null)
   const [showTrailer, setShowTrailer] = useState(false)
+  const [profile, setProfile] = useState(null)
+  const [showPayment, setShowPayment] = useState(false)
 
   useEffect(() => {
     const token = Cookies.get('token')
     if (!token) { router.push('/login'); return }
-    fetch(`/api/movies/${id}`)
-      .then(r => r.json())
-      .then(data => { setMovie(data); setLoading(false) })
+    // Fetch all needed data
+    Promise.all([
+      fetch(`/api/movies/${id}`).then(r => r.json()),
+      fetch('/api/profile', { headers: { authorization: `Bearer ${token}` } }).then(r => r.json()),
+      fetch('/api/watch-history', { headers: { authorization: `Bearer ${token}` } }).then(r => r.json())
+    ]).then(([movieData, profileData, history]) => {
+      setMovie(movieData)
+      setProfile(profileData)
+      
+      if (Array.isArray(history)) {
+        const item = history.find(h => h.movieId === parseInt(id))
+        if (item && item.progress > 0) {
+          setProgress(item.progress)
+        }
+      }
+      setLoading(false)
+    }).catch(err => {
+      console.error(err)
+      setLoading(false)
+    })
   }, [id])
+
+  // Sync video time when movie metadata is loaded
+  useEffect(() => {
+    if (videoRef.current && progress > 0) {
+      videoRef.current.currentTime = progress
+    }
+  }, [movie, progress])
+
+  // Save progress periodically
+  useEffect(() => {
+    let interval
+    if (playing) {
+      interval = setInterval(saveProgress, 10000) // 10 seconds
+    }
+    return () => clearInterval(interval)
+  }, [playing, progress, duration])
+
+  const saveProgress = async () => {
+    if (!videoRef.current || !movie) return
+    const currentPos = videoRef.current.currentTime
+    const totalDur = videoRef.current.duration
+    const token = Cookies.get('token')
+    
+    fetch('/api/watch-history', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', authorization: `Bearer ${token}` },
+      body: JSON.stringify({
+        movieId: movie.id,
+        progress: currentPos,
+        duration: totalDur
+      })
+    })
+  }
+
+  const handlePlayClick = () => {
+    if (movie.isPremium && !profile?.isPremium) {
+      setShowPayment(true)
+      return
+    }
+    togglePlay()
+  }
 
   const togglePlay = async () => {
     if (!videoRef.current) return
@@ -50,24 +118,43 @@ export default function MoviePage() {
   const hasVideo = movie?.videoUrl && movie.videoUrl.trim() !== ''
 
   if (loading) return (
-    <div style={{ background: '#0a0a0f', minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-      <div style={{ color: '#fff' }}>Memuat film...</div>
+    <div style={{ background: colors.bg, minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+      <div style={{ color: colors.text }}>{lang === 'id' ? 'Memuat film...' : 'Loading movie...'}</div>
     </div>
   )
 
   if (!movie || movie.error) return (
-    <div style={{ background: '#0a0a0f', minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-      <div style={{ color: '#fff' }}>Film tidak ditemukan</div>
+    <div style={{ background: colors.bg, minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+      <div style={{ color: colors.text }}>{lang === 'id' ? 'Film tidak ditemukan' : 'Movie not found'}</div>
     </div>
   )
 
   return (
-    <div style={{ background: '#0a0a0f', minHeight: '100vh', color: '#fff', fontFamily: 'sans-serif' }}>
+    <div style={{ background: colors.bg, minHeight: '100vh', color: colors.text, fontFamily: 'sans-serif' }}>
 
       {/* Navbar */}
-      <nav style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '14px 32px', background: 'rgba(0,0,0,0.95)', position: 'sticky', top: 0, zIndex: 10, borderBottom: '0.5px solid #1a1a1a' }}>
+      <nav style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '14px 32px', background: colors.bgNav, position: 'sticky', top: 0, zIndex: 10, borderBottom: `0.5px solid ${colors.border}` }}>
         <div onClick={() => router.push('/')} style={{ fontSize: 20, fontWeight: 700, color: '#e50914', letterSpacing: 3, cursor: 'pointer' }}>NUSAFLIX</div>
-        <button onClick={() => router.push('/')} style={{ background: 'transparent', border: '0.5px solid #444', color: '#ccc', padding: '6px 14px', borderRadius: 6, cursor: 'pointer', fontSize: 13 }}>← Kembali</button>
+        <div style={{ display: 'flex', gap: 20, alignItems: 'center' }}>
+          <span onClick={() => router.push('/')} style={{ fontSize: 14, color: colors.textMuted, cursor: 'pointer' }}>{lang === 'id' ? 'Beranda' : 'Home'}</span>
+          <span onClick={() => router.push('/explore')} style={{ fontSize: 14, color: colors.textMuted, cursor: 'pointer' }}>{lang === 'id' ? 'Eksplorasi' : 'Explore'}</span>
+          <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
+          {!profile?.isPremium && (
+            <button 
+              onClick={() => setShowPayment(true)}
+              style={{
+                background: 'linear-gradient(45deg, #ffd700, #ff8c00)',
+                color: '#000', border: 'none', padding: '6px 14px',
+                borderRadius: 20, fontWeight: 800, fontSize: 11,
+                cursor: 'pointer', boxShadow: '0 2px 10px rgba(255,215,0,0.3)'
+              }}
+            >
+              💎 {lang === 'id' ? 'UPGRADE' : 'UPGRADE'}
+            </button>
+          )}
+          <button onClick={() => router.back()} style={{ background: 'transparent', border: `0.5px solid ${colors.borderMuted}`, color: colors.textMuted, padding: '6px 14px', borderRadius: 6, cursor: 'pointer', fontSize: 13 }}>← {lang === 'id' ? 'Kembali' : 'Back'}</button>
+        </div>
+        </div>
       </nav>
 
       {/* Hero Backdrop */}
@@ -81,32 +168,42 @@ export default function MoviePage() {
           )}
           <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to right, rgba(10,10,15,0.97) 35%, rgba(10,10,15,0.4) 70%, transparent), linear-gradient(to top, rgba(10,10,15,1) 0%, transparent 40%)' }} />
           <div style={{ position: 'absolute', bottom: 44, left: 32, maxWidth: 520 }}>
-            <div style={{ fontSize: 11, color: '#e50914', fontWeight: 700, letterSpacing: 2, marginBottom: 8 }}>★ FILM</div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
+              <div style={{ fontSize: 11, color: '#e50914', fontWeight: 700, letterSpacing: 2 }}>★ FILM</div>
+              {movie.isPremium && (
+                <span style={{ background: 'linear-gradient(45deg, #ffd700, #ff8c00)', color: '#000', fontSize: 10, fontWeight: 900, padding: '2px 8px', borderRadius: 4 }}>👑 PREMIUM</span>
+              )}
+            </div>
             <h1 style={{ fontSize: 44, fontWeight: 900, marginBottom: 10, lineHeight: 1.05 }}>{movie.title}</h1>
             <div style={{ display: 'flex', gap: 10, alignItems: 'center', marginBottom: 12, flexWrap: 'wrap' }}>
               {movie.genre && <span style={{ background: '#e50914', color: '#fff', fontSize: 11, fontWeight: 700, padding: '3px 10px', borderRadius: 4 }}>{movie.genre}</span>}
               <span style={{ color: '#aaa', fontSize: 13 }}>{movie.releaseYear}</span>
               <span style={{ color: '#555' }}>•</span>
-              <span style={{ color: '#aaa', fontSize: 13 }}>{movie.duration} menit</span>
+              <span style={{ color: '#aaa', fontSize: 13 }}>{movie.duration} {lang === 'id' ? 'menit' : 'min'}</span>
             </div>
             <p style={{ color: '#bbb', fontSize: 14, lineHeight: 1.65, marginBottom: 20, maxWidth: 460 }}>
               {movie.description?.length > 200 ? movie.description.slice(0, 200) + '...' : movie.description}
             </p>
             <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
-              {hasVideo ? (
-                <button onClick={togglePlay}
+              {movie.isPremium && !profile?.isPremium ? (
+                <button onClick={() => setShowPayment(true)}
+                  style={{ background: 'linear-gradient(45deg, #ffd700, #ff8c00)', color: '#000', border: 'none', padding: '11px 28px', borderRadius: 6, fontSize: 14, fontWeight: 800, cursor: 'pointer', boxShadow: '0 4px 15px rgba(255,215,0,0.4)' }}>
+                  👑 {lang === 'id' ? 'Upgrade ke Premium' : 'Upgrade to Premium'}
+                </button>
+              ) : hasVideo ? (
+                <button onClick={handlePlayClick}
                   style={{ background: '#fff', color: '#000', border: 'none', padding: '11px 28px', borderRadius: 6, fontSize: 14, fontWeight: 700, cursor: 'pointer' }}>
-                  ▶ Putar Sekarang
+                  ▶ {lang === 'id' ? 'Putar Sekarang' : 'Play Now'}
                 </button>
               ) : (
                 <div style={{ background: '#222', border: '0.5px solid #444', color: '#888', padding: '11px 20px', borderRadius: 6, fontSize: 13 }}>
-                  Video belum tersedia
+                  {lang === 'id' ? 'Video belum tersedia' : 'Video not available yet'}
                 </div>
               )}
               {movie.trailerKey && (
               <button onClick={() => setShowTrailer(!showTrailer)}
                 style={{ background: 'transparent', border: '1px solid #fff', color: '#fff', padding: '11px 20px', borderRadius: 6, fontSize: 14, cursor: 'pointer', fontWeight: 600 }}>
-                🎬 {showTrailer ? 'Tutup Trailer' : 'Tonton Trailer'}
+                🎬 {showTrailer ? (lang === 'id' ? 'Tutup Trailer' : 'Close Trailer') : (lang === 'id' ? 'Tonton Trailer' : 'Watch Trailer')}
               </button>
             )}
              <WatchlistButton movieId={movie.id} tmdbMovieId={movie.tmdbId} />
@@ -117,14 +214,20 @@ export default function MoviePage() {
 
       {/* Video Player — hanya muncul kalau ada video dan sedang play */}
       {hasVideo && (
-        <div ref={playerRef} style={{ display: playing ? 'block' : 'none', position: 'relative', background: '#000', width: '100%', aspectRatio: '16/9', maxHeight: '75vh' }}>
+        <div ref={playerRef} style={{ display: playing ? 'block' : 'none', position: 'relative', background: '#000', width: '100%', aspectRatio: '16/9', maxHeight: '75vh', overflow: 'hidden' }}>
+          
+          {/* Gate Konten Premium */}
+          {movie.isPremium && !profile?.isPremium && (
+            <PremiumGate onUpgrade={() => setShowPayment(true)} />
+          )}
+
           <video ref={videoRef} src={movie.videoUrl}
             style={{ width: '100%', height: '100%', objectFit: 'contain', display: 'block' }}
             onTimeUpdate={() => videoRef.current && setProgress(videoRef.current.currentTime)}
             onLoadedMetadata={() => videoRef.current && setDuration(videoRef.current.duration)}
             onPlay={() => setPlaying(true)}
-            onPause={() => setPlaying(false)}
-            onEnded={() => setPlaying(false)}
+            onPause={() => { setPlaying(false); saveProgress() }}
+            onEnded={() => { setPlaying(false); saveProgress() }}
             onClick={togglePlay}
           />
           {!playing && (
@@ -153,7 +256,7 @@ export default function MoviePage() {
 
       {movie.trailerKey && showTrailer && (
       <div style={{ maxWidth: 900, margin: '0 auto', padding: '0 32px 28px' }}>
-        <h3 style={{ fontSize: 16, fontWeight: 700, marginBottom: 12, color: '#e0e0e0' }}>🎬 Trailer Resmi</h3>
+        <h3 style={{ fontSize: 16, fontWeight: 700, marginBottom: 12, color: colors.text }}>🎬 {lang === 'id' ? 'Trailer Resmi' : 'Official Trailer'}</h3>
         <div style={{ position: 'relative', paddingTop: '56.25%', borderRadius: 8, overflow: 'hidden' }}>
           <iframe
             src={`https://www.youtube.com/embed/${movie.trailerKey}?autoplay=1`}
@@ -167,15 +270,37 @@ export default function MoviePage() {
 
       {/* Info lengkap */}
       <div style={{ padding: '28px 32px', maxWidth: 900 }}>
-        <h2 style={{ fontSize: 22, fontWeight: 700, marginBottom: 8 }}>{movie.title}</h2>
+        <h2 style={{ fontSize: 22, fontWeight: 700, marginBottom: 8, color: colors.text }}>{movie.title}</h2>
         <div style={{ display: 'flex', gap: 10, alignItems: 'center', marginBottom: 16, flexWrap: 'wrap' }}>
           {movie.genre && <span style={{ background: '#e50914', color: '#fff', fontSize: 11, fontWeight: 700, padding: '3px 10px', borderRadius: 4 }}>{movie.genre}</span>}
-          <span style={{ color: '#aaa', fontSize: 13 }}>{movie.releaseYear}</span>
+          <span style={{ color: colors.textSub, fontSize: 13 }}>{movie.releaseYear}</span>
           <span style={{ color: '#555' }}>•</span>
-          <span style={{ color: '#aaa', fontSize: 13 }}>{movie.duration} menit</span>
+          <span style={{ color: colors.textSub, fontSize: 13 }}>{movie.duration} {lang === 'id' ? 'menit' : 'min'}</span>
         </div>
-        <p style={{ color: '#bbb', fontSize: 15, lineHeight: 1.7 }}>{movie.description}</p>
+        <p style={{ color: colors.textSub, fontSize: 15, lineHeight: 1.7 }}>{movie.description}</p>
+        
+        {/* Cast & Crew from TMDB */}
+        <CastSection cast={movie.cast} />
+
+        {/* Recommendations */}
+        {movie.recommendations && movie.recommendations.length > 0 && (
+          <MovieSection title={lang === 'id' ? '🍿 Mungkin Anda Juga Suka' : '🍿 You Might Also Like'} colors={colors}>
+            {movie.recommendations.map(rec => (
+              <MovieCard 
+                key={rec.id} 
+                item={rec} 
+                colors={colors} 
+                onClick={() => router.push(`/movie/${rec.id}`)} 
+              />
+            ))}
+          </MovieSection>
+        )}
+
+        {/* Reviews */}
+        <ReviewSection movieId={movie.id} />
       </div>
+
+      <PaymentModal isOpen={showPayment} onClose={() => setShowPayment(false)} />
 
     </div>
   )

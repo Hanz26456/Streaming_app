@@ -1,12 +1,26 @@
 import { prisma } from '@/lib/prisma'
 import { NextResponse } from 'next/server'
 
-export async function GET() {
-  console.log('API SERIES KEHIT!') // 🔥 debug
+// GET semua series dengan filter & sortir
+export async function GET(request) {
+  const { searchParams } = new URL(request.url)
+  const genre = searchParams.get('genre')
+  const year = searchParams.get('year')
+  const sort = searchParams.get('sort') // 'newest' | 'oldest' | 'title' | 'popular'
+
+  let orderBy = { createdAt: 'desc' }
+  if (sort === 'oldest') orderBy = { releaseYear: 'asc' }
+  if (sort === 'newest') orderBy = { releaseYear: 'desc' }
+  if (sort === 'title') orderBy = { title: 'asc' }
+  if (sort === 'popular') orderBy = { watchHistory: { _count: 'desc' } }
 
   try {
     const series = await prisma.series.findMany({
-      orderBy: { createdAt: 'desc' },
+      where: {
+        ...(genre && genre !== 'Semua' ? { genre: { contains: genre } } : {}),
+        ...(year ? { releaseYear: parseInt(year) } : {})
+      },
+      orderBy,
       include: {
         _count: { select: { episodes: true } }
       }
@@ -14,7 +28,7 @@ export async function GET() {
 
     return NextResponse.json(series)
   } catch (error) {
-    console.log('ERROR SERIES:', error) // 🔥 debug error
+    console.log('ERROR SERIES:', error)
     return NextResponse.json({ error: 'Gagal mengambil data series' }, { status: 500 })
   }
 }

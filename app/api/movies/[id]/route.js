@@ -50,7 +50,50 @@ export async function GET(request, { params }) {
       console.log('Trailer fetch gagal:', e)
     }
 
-    return NextResponse.json({ ...movie, trailerKey })
+    // ✅ Cast fetch dari TMDB
+    let cast = []
+    if (movie.tmdbId || numId) {
+      try {
+        const castRes = await fetch(
+          `https://api.themoviedb.org/3/movie/${movie.tmdbId || numId}/credits?language=id-ID`,
+          { headers: { Authorization: `Bearer ${process.env.TMDB_ACCESS_TOKEN}` } }
+        )
+        const castData = await castRes.json()
+        cast = castData.cast?.slice(0, 12).map(c => ({
+          id: c.id,
+          name: c.name,
+          character: c.character,
+          profilePath: c.profile_path ? `https://image.tmdb.org/t/p/w200${c.profile_path}` : null
+        })) || []
+      } catch (e) {
+        console.log('Cast fetch gagal:', e)
+      }
+    }
+
+    // ✅ Recommendations fetch dari TMDB
+    let recommendations = []
+    if (movie.tmdbId || numId) {
+      try {
+        const recRes = await fetch(
+          `https://api.themoviedb.org/3/movie/${movie.tmdbId || numId}/recommendations?language=id-ID`,
+          { headers: { Authorization: `Bearer ${process.env.TMDB_ACCESS_TOKEN}` } }
+        )
+        const recData = await recRes.json()
+        recommendations = (recData.results || []).slice(0, 10).map(r => ({
+          id: r.id,
+          title: r.title,
+          posterUrl: r.poster_path ? `https://image.tmdb.org/t/p/w500${r.poster_path}` : '',
+          backdropUrl: r.backdrop_path ? `https://image.tmdb.org/t/p/original${r.backdrop_path}` : null,
+          releaseYear: r.release_date?.[0] ? r.release_date.split('-')[0] : '',
+          rating: r.vote_average?.toFixed(1),
+          type: 'movie'
+        }))
+      } catch (e) {
+        console.log('Recommendations fetch gagal:', e)
+      }
+    }
+
+    return NextResponse.json({ ...movie, trailerKey, cast, recommendations })
 
   } catch (error) {
     console.error('ERROR:', error)

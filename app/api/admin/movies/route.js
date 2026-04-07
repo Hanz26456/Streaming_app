@@ -6,7 +6,8 @@ export async function GET() {
     orderBy: { createdAt: 'desc' },
     select: {
       id: true, title: true, posterUrl: true,
-      videoUrl: true, releaseYear: true, genre: true
+      videoUrl: true, releaseYear: true, genre: true,
+      isPremium: true
     }
   })
   return NextResponse.json(movies)

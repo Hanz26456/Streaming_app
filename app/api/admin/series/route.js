@@ -7,6 +7,7 @@ export async function GET() {
     select: {
       id: true, title: true, posterUrl: true,
       releaseYear: true, genre: true,
+      isPremium: true,
       _count: { select: { episodes: true } }
     }
   })

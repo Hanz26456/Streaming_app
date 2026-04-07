@@ -2,8 +2,11 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Cookies from 'js-cookie'
+import { useApp } from '@/context/AppContext'
+import ThemeLangToggle from '@/components/ThemeLangToggle'
 
 export default function LoginPage() {
+  const { colors, lang } = useApp()
   const router = useRouter()
   const [mode, setMode] = useState('login') // 'login' | 'register'
   const [form, setForm] = useState({ name: '', email: '', password: '' })
@@ -38,11 +41,14 @@ export default function LoginPage() {
 
   return (
     <div style={{
-      minHeight: '100vh', background: '#0a0a0f',
-      display: 'flex', alignItems: 'center', justifyContent: 'center'
+      minHeight: '100vh', background: colors.bg,
+      display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative'
     }}>
+      <div style={{ position: 'absolute', top: 20, right: 32 }}>
+        <ThemeLangToggle />
+      </div>
       <div style={{
-        background: '#141414', border: '0.5px solid #2a2a2a',
+        background: colors.cardBg, border: `0.5px solid ${colors.border}`,
         borderRadius: 12, padding: '40px 36px', width: '100%', maxWidth: 400
       }}>
         <div style={{ textAlign: 'center', marginBottom: 28 }}>
@@ -50,30 +56,30 @@ export default function LoginPage() {
             fontFamily: 'Georgia, serif', fontSize: 28, fontWeight: 700,
             color: '#e50914', letterSpacing: 3, marginBottom: 6
           }}>NUSAFLIX</div>
-          <div style={{ fontSize: 20, fontWeight: 600, color: '#fff' }}>
-            {mode === 'login' ? 'Masuk' : 'Daftar Akun'}
+          <div style={{ fontSize: 20, fontWeight: 600, color: colors.text }}>
+            {mode === 'login' ? (lang === 'id' ? 'Masuk' : 'Login') : (lang === 'id' ? 'Daftar Akun' : 'Register')}
           </div>
         </div>
 
         {mode === 'register' && (
           <div style={{ marginBottom: 14 }}>
-            <label style={{ fontSize: 12, color: '#aaa', display: 'block', marginBottom: 6 }}>Nama Lengkap</label>
+            <label style={{ fontSize: 12, color: colors.textSub, display: 'block', marginBottom: 6 }}>{lang === 'id' ? 'Nama Lengkap' : 'Full Name'}</label>
             <input
               type="text"
-              placeholder="Nama kamu"
+              placeholder={lang === 'id' ? "Nama kamu" : "Your name"}
               value={form.name}
               onChange={e => setForm({ ...form, name: e.target.value })}
               style={{
                 width: '100%', padding: '10px 14px', borderRadius: 6,
-                background: '#1e1e1e', border: '0.5px solid #333',
-                color: '#fff', fontSize: 14, outline: 'none', boxSizing: 'border-box'
+                background: colors.bgInput, border: `0.5px solid ${colors.borderMuted}`,
+                color: colors.text, fontSize: 14, outline: 'none', boxSizing: 'border-box'
               }}
             />
           </div>
         )}
 
         <div style={{ marginBottom: 14 }}>
-          <label style={{ fontSize: 12, color: '#aaa', display: 'block', marginBottom: 6 }}>Email</label>
+          <label style={{ fontSize: 12, color: colors.textSub, display: 'block', marginBottom: 6 }}>Email</label>
           <input
             type="email"
             placeholder="email@kamu.com"
@@ -81,14 +87,14 @@ export default function LoginPage() {
             onChange={e => setForm({ ...form, email: e.target.value })}
             style={{
               width: '100%', padding: '10px 14px', borderRadius: 6,
-              background: '#1e1e1e', border: '0.5px solid #333',
-              color: '#fff', fontSize: 14, outline: 'none', boxSizing: 'border-box'
+              background: colors.bgInput, border: `0.5px solid ${colors.borderMuted}`,
+              color: colors.text, fontSize: 14, outline: 'none', boxSizing: 'border-box'
             }}
           />
         </div>
 
         <div style={{ marginBottom: 20 }}>
-          <label style={{ fontSize: 12, color: '#aaa', display: 'block', marginBottom: 6 }}>Password</label>
+          <label style={{ fontSize: 12, color: colors.textSub, display: 'block', marginBottom: 6 }}>Password</label>
           <input
             type="password"
             placeholder="••••••••"
@@ -96,8 +102,8 @@ export default function LoginPage() {
             onChange={e => setForm({ ...form, password: e.target.value })}
             style={{
               width: '100%', padding: '10px 14px', borderRadius: 6,
-              background: '#1e1e1e', border: '0.5px solid #333',
-              color: '#fff', fontSize: 14, outline: 'none', boxSizing: 'border-box'
+              background: colors.bgInput, border: `0.5px solid ${colors.borderMuted}`,
+              color: colors.text, fontSize: 14, outline: 'none', boxSizing: 'border-box'
             }}
           />
         </div>
@@ -120,16 +126,16 @@ export default function LoginPage() {
             cursor: loading ? 'not-allowed' : 'pointer'
           }}
         >
-          {loading ? 'Memproses...' : mode === 'login' ? 'Masuk' : 'Daftar'}
+          {loading ? (lang === 'id' ? 'Memproses...' : 'Processing...') : (mode === 'login' ? (lang === 'id' ? 'Masuk' : 'Login') : (lang === 'id' ? 'Daftar' : 'Register'))}
         </button>
 
-        <div style={{ textAlign: 'center', marginTop: 20, fontSize: 13, color: '#888' }}>
-          {mode === 'login' ? 'Belum punya akun? ' : 'Sudah punya akun? '}
+        <div style={{ textAlign: 'center', marginTop: 20, fontSize: 13, color: colors.textSub }}>
+          {mode === 'login' ? (lang === 'id' ? 'Belum punya akun? ' : 'Don\'t have an account? ') : (lang === 'id' ? 'Sudah punya akun? ' : 'Already have an account? ')}
           <span
             onClick={() => { setMode(mode === 'login' ? 'register' : 'login'); setError('') }}
-            style={{ color: '#fff', cursor: 'pointer', textDecoration: 'underline' }}
+            style={{ color: colors.text, cursor: 'pointer', textDecoration: 'underline' }}
           >
-            {mode === 'login' ? 'Daftar sekarang' : 'Masuk'}
+            {mode === 'login' ? (lang === 'id' ? 'Daftar sekarang' : 'Register now') : (lang === 'id' ? 'Masuk' : 'Login')}
           </span>
         </div>
       </div>

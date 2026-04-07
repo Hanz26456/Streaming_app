@@ -2,8 +2,11 @@
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Cookies from 'js-cookie'
+import { useApp } from '@/context/AppContext'
+import ThemeLangToggle from '@/components/ThemeLangToggle'
 
 export default function WatchlistPage() {
+  const { colors, lang } = useApp()
   const router = useRouter()
   const [watchlist, setWatchlist] = useState([])
   const [loading, setLoading] = useState(true)
@@ -46,21 +49,27 @@ export default function WatchlistPage() {
   })
 
   if (loading) return (
-    <div style={{ background: '#0a0a0f', minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-      <div style={{ color: '#fff' }}>Memuat watchlist...</div>
+    <div style={{ background: colors.bg, minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+      <div style={{ color: colors.text }}>{lang === 'id' ? 'Memuat watchlist...' : 'Loading watchlist...'}</div>
     </div>
   )
 
   return (
-    <div style={{ background: '#0a0a0f', minHeight: '100vh', color: '#fff', fontFamily: 'sans-serif' }}>
+    <div style={{ background: colors.bg, minHeight: '100vh', color: colors.text, fontFamily: 'sans-serif' }}>
 
       {/* Navbar */}
-      <nav style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '14px 32px', background: 'rgba(0,0,0,0.9)', position: 'sticky', top: 0, zIndex: 10 }}>
-        <div onClick={() => router.push('/')} style={{ fontSize: 22, fontWeight: 700, color: '#e50914', letterSpacing: 3, cursor: 'pointer' }}>NUSAFLIX</div>
-        <div style={{ display: 'flex', gap: 20, alignItems: 'center' }}>
-          <span onClick={() => router.push('/')} style={{ fontSize: 14, color: '#ccc', cursor: 'pointer' }}>Beranda</span>
-          <span onClick={() => router.push('/series')} style={{ fontSize: 14, color: '#ccc', cursor: 'pointer' }}>Series</span>
-          <span onClick={() => router.push('/search')} style={{ fontSize: 20, cursor: 'pointer', color: '#ccc' }}>🔍</span>
+      <nav style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '14px 32px', background: colors.bgNav, position: 'sticky', top: 0, zIndex: 10, borderBottom: `0.5px solid ${colors.border}` }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 32 }}>
+          <div onClick={() => router.push('/')} style={{ fontSize: 22, fontWeight: 700, color: '#e50914', letterSpacing: 3, cursor: 'pointer' }}>NUSAFLIX</div>
+          <div style={{ display: 'flex', gap: 20, alignItems: 'center' }}>
+            <span onClick={() => router.push('/')} style={{ fontSize: 14, color: colors.textMuted, cursor: 'pointer' }}>{lang === 'id' ? 'Beranda' : 'Home'}</span>
+            <span onClick={() => router.push('/explore')} style={{ fontSize: 14, color: colors.textMuted, cursor: 'pointer' }}>{lang === 'id' ? 'Eksplorasi' : 'Explore'}</span>
+            <span onClick={() => router.push('/series')} style={{ fontSize: 14, color: colors.textMuted, cursor: 'pointer' }}>Series</span>
+            <span onClick={() => router.push('/search')} style={{ fontSize: 20, cursor: 'pointer', color: colors.textMuted }}>🔍</span>
+          </div>
+        </div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
+          <ThemeLangToggle />
         </div>
       </nav>
 
@@ -68,20 +77,20 @@ export default function WatchlistPage() {
 
         {/* Header */}
         <div style={{ marginBottom: 28 }}>
-          <h1 style={{ fontSize: 28, fontWeight: 800, marginBottom: 6 }}>❤️ Watchlist Saya</h1>
-          <p style={{ color: '#aaa', fontSize: 14 }}>{watchlist.length} item tersimpan</p>
+          <h1 style={{ fontSize: 28, fontWeight: 800, marginBottom: 6 }}>❤️ {lang === 'id' ? 'Watchlist Saya' : 'My Watchlist'}</h1>
+          <p style={{ color: colors.textSub, fontSize: 14 }}>{watchlist.length} {lang === 'id' ? 'item tersimpan' : 'items saved'}</p>
         </div>
 
         {/* Filter */}
         <div style={{ display: 'flex', gap: 8, marginBottom: 28 }}>
           {[
-            { label: 'Semua', value: 'all' },
-            { label: '🎬 Film', value: 'movie' },
+            { label: lang === 'id' ? 'Semua' : 'All', value: 'all' },
+            { label: lang === 'id' ? '🎬 Film' : '🎬 Movie', value: 'movie' },
             { label: '📺 Series', value: 'series' },
           ].map(f => (
             <button key={f.value} onClick={() => setFilter(f.value)} style={{
-              background: filter === f.value ? '#e50914' : '#1a1a2e',
-              color: '#fff', border: 'none', padding: '7px 18px',
+              background: filter === f.value ? '#e50914' : colors.bgInput,
+              color: filter === f.value ? '#fff' : colors.text, border: 'none', padding: '7px 18px',
               borderRadius: 20, cursor: 'pointer', fontSize: 13, fontWeight: 600
             }}>
               {f.label}
@@ -91,12 +100,12 @@ export default function WatchlistPage() {
 
         {/* Kosong */}
         {filtered.length === 0 && (
-          <div style={{ textAlign: 'center', padding: '80px 0', color: '#555' }}>
+          <div style={{ textAlign: 'center', padding: '80px 0', color: colors.textSub }}>
             <div style={{ fontSize: 52, marginBottom: 16 }}>❤️</div>
-            <div style={{ fontSize: 18, fontWeight: 600, marginBottom: 8, color: '#777' }}>Watchlist masih kosong</div>
-            <div style={{ fontSize: 14, marginBottom: 24 }}>Tambahkan film atau series favoritmu</div>
+            <div style={{ fontSize: 18, fontWeight: 600, marginBottom: 8, color: colors.textSub }}>{lang === 'id' ? 'Watchlist masih kosong' : 'Watchlist is empty'}</div>
+            <div style={{ fontSize: 14, marginBottom: 24 }}>{lang === 'id' ? 'Tambahkan film atau series favoritmu' : 'Add your favorite movies or series'}</div>
             <button onClick={() => router.push('/')} style={{ background: '#e50914', color: '#fff', border: 'none', padding: '10px 24px', borderRadius: 6, cursor: 'pointer', fontWeight: 700 }}>
-              Jelajahi Konten
+              {lang === 'id' ? 'Jelajahi Konten' : 'Explore Content'}
             </button>
           </div>
         )}
@@ -109,7 +118,7 @@ export default function WatchlistPage() {
             if (!item) return null
 
             return (
-              <div key={w.id} style={{ borderRadius: 8, overflow: 'hidden', background: '#111', position: 'relative' }}>
+              <div key={w.id} style={{ borderRadius: 8, overflow: 'hidden', background: colors.cardBg, border: `0.5px solid ${colors.border}`, position: 'relative' }}>
                 {/* Poster */}
                 <div
                   style={{ cursor: 'pointer', position: 'relative' }}
@@ -135,8 +144,8 @@ export default function WatchlistPage() {
 
                 {/* Info */}
                 <div style={{ padding: '10px 12px 12px' }}>
-                  <div style={{ fontWeight: 700, fontSize: 13, marginBottom: 4, color: '#e0e0e0' }}>{item.title}</div>
-                  <div style={{ fontSize: 11, color: '#666', marginBottom: 10 }}>
+                  <div style={{ fontWeight: 700, fontSize: 13, marginBottom: 4, color: colors.text }}>{item.title}</div>
+                  <div style={{ fontSize: 11, color: colors.textSub, marginBottom: 10 }}>
                     {item.genre} • {item.releaseYear}
                     {isMovie && ` • ${item.duration} mnt`}
                     {!isMovie && item._count && ` • ${item._count.episodes} ep`}
@@ -144,11 +153,11 @@ export default function WatchlistPage() {
                   {/* Hapus */}
                   <button
                     onClick={() => removeFromWatchlist(w.movieId, w.seriesId)}
-                    style={{ width: '100%', background: 'transparent', border: '1px solid #333', color: '#aaa', padding: '6px', borderRadius: 6, cursor: 'pointer', fontSize: 12, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 4 }}
+                    style={{ width: '100%', background: 'transparent', border: `1px solid ${colors.borderMuted}`, color: colors.textSub, padding: '6px', borderRadius: 6, cursor: 'pointer', fontSize: 12, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 4 }}
                     onMouseEnter={e => { e.currentTarget.style.borderColor = '#e50914'; e.currentTarget.style.color = '#e50914' }}
-                    onMouseLeave={e => { e.currentTarget.style.borderColor = '#333'; e.currentTarget.style.color = '#aaa' }}
+                    onMouseLeave={e => { e.currentTarget.style.borderColor = colors.borderMuted; e.currentTarget.style.color = colors.textSub }}
                   >
-                    🗑 Hapus dari Watchlist
+                    🗑 {lang === 'id' ? 'Hapus' : 'Remove'}
                   </button>
                 </div>
               </div>

@@ -26,6 +26,7 @@ export async function GET(request) {
         email: true,
         avatarUrl: true,
         role: true,
+        isPremium: true,
         createdAt: true,
         _count: {
           select: {
@@ -70,7 +71,7 @@ export async function PATCH(request) {
     const updated = await prisma.user.update({
       where: { id: userId },
       data: updateData,
-      select: { id: true, name: true, email: true, avatarUrl: true,role: true}
+      select: { id: true, name: true, email: true, avatarUrl: true, role: true, isPremium: true }
     })
 
     return NextResponse.json(updated)
